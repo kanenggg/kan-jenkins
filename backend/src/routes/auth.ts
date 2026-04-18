@@ -26,7 +26,7 @@ router.get(
         { id: user.id, role: user.role },
         process.env.JWT_SECRET!
       );
-      res.redirect(`https://ploclo-cms.zercoms.com/`);
+      res.redirect(`http://35.202.168.233:3000`);
     } catch (err) {
       console.error("CALLBACK ROUTE ERROR:", err);
       res.status(500).send("Internal Server Error");
