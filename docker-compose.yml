@@ -1,66 +1,64 @@
 services:
-  mysql:
-    image: mysql:8.0
-    container_name: attractions_mysql
-    restart: unless-stopped
+  postgres:
+    image: postgres:15
+    container_name: postgres
     environment:
-      MYSQL_ROOT_PASSWORD: ${MYSQL_ROOT_PASSWORD}
-      MYSQL_DATABASE: ${MYSQL_DATABASE}
-      MYSQL_USER: ${MYSQL_USER}
-      MYSQL_PASSWORD: ${MYSQL_PASSWORD}
-      TZ: Asia/Bangkok
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: admin123
+      POSTGRES_DB: myapp
     ports:
-      - "127.0.0.1:${MYSQL_PORT:-3306}:3306"
+      - "5432:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres -d myapp"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
     volumes:
-      - mysql_data:/var/lib/mysql
-      - ./init.sql:/docker-entrypoint-initdb.d/init.sql:ro
-    networks: [stack]
+      - pgdata:/var/lib/postgresql/data
 
-  phpmyadmin:
-    image: phpmyadmin/phpmyadmin:latest
-    restart: unless-stopped
+  pgadmin:
+    image: dpage/pgadmin4
+    container_name: pgadmin_container
     environment:
-      PMA_HOST: mysql
-      PMA_PORT: 3306
-      UPLOAD_LIMIT: 256M
+      PGADMIN_DEFAULT_EMAIL: "admin@admin.com"
+      PGADMIN_DEFAULT_PASSWORD: "admin"
     ports:
-      - "${PHPMYADMIN_PORT:-8888}:80"
-    depends_on: [mysql]
-    networks: [stack]
+      - "5050:80"
+    depends_on:
+      - postgres
 
-  api:
-    build: ./01_api
-    restart: unless-stopped
-    environment:
-      NODE_ENV: production
-      PORT: ${API_PORT}
-      DB_HOST: mysql
-      DB_PORT: ${DB_PORT}
-      DB_NAME: ${MYSQL_DATABASE}
-      DB_USER: ${MYSQL_USER}
-      DB_PASSWORD: ${MYSQL_PASSWORD}
-      TZ: Asia/Bangkok
+  backend:
+    build:
+      context: ./backend
+      args:
+        - DATABASE_URL=${DATABASE_URL}
+    container_name: backend
+    depends_on:
+      postgres:
+        condition: service_healthy
+    env_file:
+      - ./.env
+    volumes:
+      - ./backend:/app
+      - /app/node_modules
     ports:
-      - "${API_PORT:-3001}:3001"
-    depends_on: [mysql]
-    networks: [stack]
+      - "9771:3001"
+    command: sh -c "npx prisma db push && npm run dev"
 
   frontend:
     build:
-      context: ./02_frontend
-      args:
-        - API_HOST=${API_HOST:-http://localhost:3001}
-    restart: unless-stopped
-    environment:
-      - NODE_ENV=production
+      context: ./frontend
+      dockerfile: Dockerfile
+    container_name: frontend
+    volumes:
+      - ./frontend:/app
+      - /app/.next
     ports:
-      - "${FRONTEND_PORT:-3000}:3000"
-    depends_on: [api]
-    networks: [stack]
+      - "9770:3000"
+      - NODE_ENV=development
+    command: npm run dev
+    env_file:
+      - ./.env
 
 volumes:
-  mysql_data:
-
-networks:
-  stack:
-    driver: bridge
+  pgdata:
