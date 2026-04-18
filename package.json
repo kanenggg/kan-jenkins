@@ -1,0 +1,29 @@
+{
+  "name": "kan-jenkins",
+  "version": "1.0.0",
+  "main": "index.js",
+  "scripts": {
+    "dev": "next dev --turbopack -p 3000",
+    "build": "next build --turbopack",
+    "start": "next start -p 3000",
+    "lint": "eslint"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/kanenggg/kan-jenkins.git"
+  },
+  "keywords": [],
+  "author": "",
+  "license": "ISC",
+  "bugs": {
+    "url": "https://github.com/kanenggg/kan-jenkins/issues"
+  },
+  "homepage": "https://github.com/kanenggg/kan-jenkins#readme",
+  "description": "",
+  "dependencies": {
+    "cors": "^2.8.6",
+    "dotenv": "^17.4.2",
+    "express": "^5.2.1",
+    "mysql2": "^3.22.1"
+  }
+}
